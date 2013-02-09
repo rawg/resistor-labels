@@ -15,7 +15,15 @@
     },
     
     getValueByName: function (color) {
-      return Colors.names.indexOf(color);
+      var value = Colors.names.indexOf(color);
+      if (value > 9) {
+        throw "Trying to get value of gold or silver";
+      }
+      return value;
+    },
+    
+    getMultiplierByName: function (color) {
+      return Colors.multipliers[Colors.names.indexOf(color)];
     },
     
     labelColors: [
@@ -28,6 +36,8 @@
       "#cccccc",
       "#333333",
       "#ffffff",
+      "#333333",
+      "#333333",
       "#333333"
     ],
     
@@ -41,7 +51,9 @@
       "#0B0BE6",
       "#E515E5",
       "#999999",
-      "#FFFFFF"
+      "#FFFFFF",
+      "#E7AA0B",
+      "#CCCCCC"
     ],
     
     names: [
@@ -54,15 +66,33 @@
       "blue",   // 6
       "violet", // 7
       "grey",   // 8
-      "white"   // 9
-    ]
+      "white",   // 9
+      "gold",
+      "silver"
+    ],
     
+    multipliers: [
+      1,          // black
+      10,         // brown
+      100,        // red
+      1000,       // orange
+      10000,      // yellow
+      100000,     // green
+      1000000,    // blue
+      10000000,   // violet
+      0,          // grey
+      0,          // white
+      0.1,        // gold
+      0.01        // silver
+    ]
   };
   
   var Label = {
     size: 300,
     margin: 12,
-    ohms: "\u03A9", //"Ω",
+    useDecimals: true,
+    showBorders: true,
+    ohms: "\u03A9", // Ω, preferred over \u2126,
     bandHeight: 0,
     
     create: function (resistance) {
@@ -70,24 +100,26 @@
         bandWidth = (Label.size - Label.margin * 2) / resistance.bands.length;
       
       
-      group.add(new fabric.Rect({
-        "width": Label.size, 
-        "height": Label.size, 
-        "top": 0, 
-        "left": 0, 
-        "strokeWidth": 1, 
-        "stroke": "#333", 
-        "fill": "rgba(255,255,255,0)"
-      }));
-      
+      if (Label.showBorders) {
+        group.add(new fabric.Rect({
+          "width": Label.size, 
+          "height": Label.size, 
+          "top": 0, 
+          "left": 0, 
+          "strokeWidth": 0.5, 
+          "stroke": "#333", 
+          "fill": "rgba(255,255,255,0)"
+        }));
+      }
+    
       for (var i = 0; i < resistance.bands.length; i++) {
         group.add(new fabric.Rect({
           "width": bandWidth - Label.margin,
           "height": Label.bandHeight,
           "top": Label.bandHeight / 2 - (Label.size - Label.bandHeight),
           "left": i * bandWidth + (bandWidth / 2) - (Label.size / 2) + Label.margin,
-          "rx": 4,
-          "ry": 4,
+          "rx": 6,
+          "ry": 6,
           "fill": Colors.getByName(resistance.bands[i]),
           "stroke": "#666",
           "strokeWidth": 1,
@@ -143,7 +175,7 @@
       Canvas.fabric.add(label);
       Canvas.fabric.renderAll();
       
-      if (Canvas.col == Canvas.maxColumns) {
+      if (Canvas.col == Canvas.maxColumns - 1) {
         Canvas.col = 0;
         ++Canvas.row;
       } else {
@@ -152,6 +184,14 @@
       
     }
   };
+  
+  
+  var multiples = [
+    {"base": 1000000, "label": "M"},
+    {"base": 1000, "label": "K"},
+    {"base": 1, "label": ""},
+    //{"base": 0.001, "label": "m"}
+  ];
   
   function Resistance() {
     // Argument validation
@@ -172,17 +212,46 @@
     for (var i = 0, multiplier = Math.pow(10, arguments.length - 2); i < arguments.length - 1; i++, multiplier /= 10) {
       this.ohms += multiplier * Colors.getValueByName(arguments[i]);
     }
-    this.ohms *= Math.pow(10, Colors.getValueByName(arguments[arguments.length - 1]));
+    this.ohms *= Colors.getMultiplierByName(arguments[arguments.length - 1]);
     
-    // Ohms to label (such as 562KΩ)
-    if (this.ohms / 1000000 > 1) {
-      this.label = this.ohms / 1000000 + " M" + Label.ohms;
-    } else if (this.ohms / 1000 > 1) {
-      this.label = this.ohms / 1000 + " K" + Label.ohms;
-    } else {
-      this.label = this.ohms + " " + Label.ohms;
+    for (var i in multiples) {
+      if (this.ohms / multiples[i].base >= 1) {
+        if (Label.useDecimals) {
+          // Use decimal notation
+          this.label = this.ohms / multiples[i].base + multiples[i].label + Label.ohms;
+          
+        } else {
+          // Put remainder to right of Ohms symbol, e.g. 5R6
+          this.label = parseInt(this.ohms / multiples[i].base) + multiples[i].label + Label.ohms;
+          var r = this.ohms % multiples[i].base;
+          if (r > 0) {
+            this.label += Math.round(r / (multiples[i].base / 10));
+          }
+          
+        }
+        
+        break;
+      }
     }
     
+    this.equals = function (resistance) {
+      if (typeof resistance !== "object" || typeof resistance.bands !== "object") {
+        return false;
+      }
+      
+      var isEqual = true;
+      for (var i in this.bands) {
+        if (this.bands[i] != resistance.bands[i]) {
+          isEqual = false;
+          break;
+        }
+      }
+      return isEqual;
+    }
+  }
+  
+  Resistance.compare = function (a, b) {
+    return a.ohms - b.ohms;
   }
   
   
@@ -194,7 +263,9 @@
     
     var $ref = $("#ColorRef ul"),
       $err = $("#ErrorChecking"),
-      $errStatus = $("#Status");
+      $errStatus = $("#Status"),
+      $showBorders = $("#ShowBorder"),
+      $decimals = $("#UseDecimal");
       
     for (var i in Colors.names) {
       $ref.append(
@@ -204,11 +275,22 @@
       );
     }
     
+    $decimals.click(function () {
+      Label.useDecimals = $decimals.is(":checked");
+    });
+    
+    $showBorders.click(function () {
+      Label.showBorders = $showBorders.is(":checked");
+    });
+    
     $("#Generate").click(function () {
       $err.html("");
+      Canvas.row = 0;
+      Canvas.col = 0;
       Canvas.fabric.clear().renderAll();
       
       var isValid = true,
+        resistances = [],
         entries = $("#Input").val()
           .replace(/\r/g, "\n")       // Remove any line breaks from less privileged platforms
           .replace(/[\n]{2,}/g, "\n") // Reduce successive line breaks
@@ -218,7 +300,7 @@
       
       // Error checking
       for (var i in entries) {
-        var out = "<p>";
+        var out = "<li>";
         entries[i] = entries[i].split(/[\s]+/);
         
         for (var n in entries[i]) {
@@ -226,24 +308,37 @@
             out += entries[i][n] + " ";
           } else {
             isValid = false;
-            out += '<span class="err">' + entries[i][n] + "</span>";
+            out += '<span class="err">' + entries[i][n] + "</span> ";
           }
         }
         
-        out += "</p>";
+        try {
+          resistances[i] = new Resistance(entries[i]);
+          if (typeof resistances[i].ohms === 'number') {
+            out += "(" + resistances[i].label + ")";
+          }
+        } catch (e) {
+          // do nothing; we have other error handling
+          continue;
+        }
+        
+        out += "</li>";
         $err.append(out);
         
       }
       
+      resistances.sort(Resistance.compare);
+      
       // Rendering
       if (isValid) {
         $errStatus.html("OK");
-        for (var i in entries) {
-          try {
-            Canvas.addLabel(Label.create(new Resistance(entries[i])));
-          } catch (e) {
-            console.log(e);
-          }  
+        var last = null;
+        
+        for (var i in resistances) {
+          if (last == null || !resistances[i].equals(last)) {
+            Canvas.addLabel(Label.create(resistances[i]));
+            last = resistances[i];
+          }
         }
       } else {
         $errStatus.html("Error!");
