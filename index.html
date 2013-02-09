@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Resistor Reader and Labeler</title>
+    <link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
+		<style type="text/css">
+			body {
+				margin: 1ex;
+			}
+			#ColorRef li {
+				padding: 3px;
+				width: 25ex;
+				list-style: none;
+			}
+			#Labels {
+				border: 1px solid #000;
+				padding: 0px;
+			}
+			#Ghost {
+				display: none;
+			}
+			#Container {
+				text-align: center;
+			}
+			#Input {
+				display: block;
+				height: 8em;
+			}
+			.err {
+				color: red;
+				font-weight: bold;
+				text-decoration: line-through;
+			}
+		</style>
+  </head>
+  <body>
+    <h1>Resistance is Futile</h1>
+		
+		<div class="row">
+			<div class="span4">
+				<h2>Input</h2>
+				<label>Resistors: <textarea id="Input">
+red black green
+green blue yellow
+red orange violet black
+				</textarea></label>
+				<button id="Generate">Generate</button>
+			</div>
+
+			<div class="span4">
+				<h2>Results</h2>
+				<h3 id="Status"></h3>
+				<div id="ErrorChecking"></div>
+			</div>
+
+			<div id="ColorRef" class="span4">
+				<h2>Colors </h2>
+				<ul></ul>
+			</div>
+			
+		</div>
+		
+		<div id="Container">
+			<button id="Save">Download</button>
+			<canvas id="Labels" width="400" height="300"></canvas>
+		</div>
+		<canvas id="Ghost" width="1" height="1"></canvas>
+		<script src="js/fabric-0.9.15.min.js"></script>
+		<script src="js/jquery-1.9.0.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+		<script src="js/FreeBeer_400-FreeBeer_700.font.js"></script>
+		<script src="js/resistance.js"></script>
+  </body>
+</html>
