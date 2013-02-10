@@ -4,68 +4,99 @@
     <title>Resistor Reader and Labeler</title>
     <link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
 		<style type="text/css">
-			body {
-				margin: 1ex;
+			#ColorRef ul {
+				width: 100%;
+				text-align: center;
 			}
 			#ColorRef li {
-				padding: 3px;
-				width: 25ex;
+				padding: 5px;
+				width: 90%;
 				list-style: none;
-			}
-			#Labels {
-				border: 1px solid #000;
-				padding: 0px;
+				text-align: center;
 			}
 			#Ghost {
 				display: none;
 			}
-			#Container {
-				margin-left: 4em;
-			}
 			#Input {
 				display: block;
-				height: 8em;
 			}
-			.err {
+			#ErrorChecking li {
+				list-style: none;
+			}
+			#ButtonRow {
+				margin-top: 1em;
+				margin-bottom: 1em;
+			}
+			#Title {
+				background-color: #000000;
+				color: #ffffff;
+				background-image: url("img/wild_oliva.png");
+				background-repeat: repeat-x;
+				margin-bottom: 1em;
+			}
+			.feedback-error {
 				color: red;
+			}
+			li .feedback-error {
 				font-weight: bold;
 				text-decoration: line-through;
 			}
 		</style>
   </head>
   <body>
-    <h1>Resistance is Futile</h1>
+    <div class="row" id="Title">
+			<div class="span10 offset1">
+			<h1>Resistance is Futile</h1>
+			<p>(but labeling it isn't)</p>
+			</div>
+		</div>
 		
-		<div class="row">
-			<div class="span4">
-				<h2>Input</h2>
-				<label>Resistors: <textarea id="Input">
+		
+		<div class="container-fluid">
+			<div class="row-fluid">
+				<div class="span4">
+					<textarea id="Input" rows="12">
 red black green
 green blue yellow
 red orange violet black
-				</textarea></label>
-				<label><input type="checkbox" id="UseDecimal" checked="checked" /> Use decimal points</label>
-				<label><input type="checkbox" id="ShowBorder" checked="checked" /> Show borders</label>
-				<button id="Generate">Generate</button>
+					</textarea>
+					
+					<a href="#ColorListModal" role="button" data-toggle="modal">Uhh, what colors?</a>
+					
+					<label><input type="checkbox" id="UseDecimal" checked="checked" /> Decimal points</label>
+					<label><input type="checkbox" id="ShowBorder" checked="checked" /> Borders</label>
+					
+					<div id="ButtonRow">
+						<button id="Generate" class="btn"><i class="icon-refresh"></i> Generate</button>
+						<button id="Save" class="btn" disabled="disabled"><i class="icon-download"></i> Download</button>
+					</div>
+					
+					<ul id="ErrorChecking"></ul>
+				</div>
+
+				<div class="span8">
+					<canvas id="Labels" width="400" height="300"></canvas>
+				</div>
+
 			</div>
 
-			<div class="span4">
-				<h2>Results</h2>
-				<h3 id="Status"></h3>
-				<ul id="ErrorChecking"></ul>
-			</div>
-
-			<div id="ColorRef" class="span4">
-				<h2>Colors </h2>
-				<ul></ul>
+			<!-- List of available colors -->
+			<div class="modal hide fade" id="ColorListModal">
+			  <div class="modal-header">
+			    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			    <h3>Available Colors</h3>
+			  </div>
+			  <div class="modal-body text-center" id="ColorRef">
+					<!-- populated via JS -->
+			    <ul></ul>
+			  </div>
+			  <div class="modal-footer">
+			    <a href="#" data-dismiss="modal" class="btn btn-primary">Close</a>
+			  </div>
 			</div>
 			
 		</div>
 		
-		<div id="Container">
-			<button id="Save">Download</button>
-			<canvas id="Labels" width="400" height="300"></canvas>
-		</div>
 		<canvas id="Ghost" width="1" height="1"></canvas>
 		<script src="js/fabric-0.9.15.min.js"></script>
 		<script src="js/jquery-1.9.0.js"></script>

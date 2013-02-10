@@ -89,7 +89,8 @@
   
   var Label = {
     size: 300,
-    margin: 12,
+    margin: 20,
+    spacing: 10,
     useDecimals: true,
     showBorders: true,
     ohms: "\u03A9", // Ω, preferred over \u2126,
@@ -107,17 +108,17 @@
           "top": 0, 
           "left": 0, 
           "strokeWidth": 0.5, 
-          "stroke": "#333", 
+          "stroke": "#999999", 
           "fill": "rgba(255,255,255,0)"
         }));
       }
     
       for (var i = 0; i < resistance.bands.length; i++) {
         group.add(new fabric.Rect({
-          "width": bandWidth - Label.margin,
+          "width": bandWidth - Label.spacing,
           "height": Label.bandHeight,
-          "top": Label.bandHeight / 2 - (Label.size - Label.bandHeight),
-          "left": i * bandWidth + (bandWidth / 2) - (Label.size / 2) + Label.margin,
+          "top": Label.bandHeight / 2 - (Label.size - Label.bandHeight - Label.margin),
+          "left": (Label.size / 2 * -1) + (bandWidth * i) + Label.margin + bandWidth / 2,
           "rx": 6,
           "ry": 6,
           "fill": Colors.getByName(resistance.bands[i]),
@@ -152,7 +153,7 @@
     jq: null,
     row: 0,
     col: 0,
-    maxColumns: 8,
+    maxColumns: 7,
     
     addLabel: function (label) {
       // Increase width while adding to first row
@@ -263,7 +264,6 @@
     
     var $ref = $("#ColorRef ul"),
       $err = $("#ErrorChecking"),
-      $errStatus = $("#Status"),
       $showBorders = $("#ShowBorder"),
       $decimals = $("#UseDecimal");
       
@@ -285,6 +285,7 @@
     
     $("#Generate").click(function () {
       $err.html("");
+      $("#Save").attr("disabled", false);
       Canvas.row = 0;
       Canvas.col = 0;
       Canvas.fabric.clear().renderAll();
@@ -292,6 +293,8 @@
       var isValid = true,
         resistances = [],
         entries = $("#Input").val()
+          .toLowerCase()              // Convert to lower case
+          .replace(/[^a-z\s]/g, " ")  // Remove commas and other undesirables
           .replace(/\r/g, "\n")       // Remove any line breaks from less privileged platforms
           .replace(/[\n]{2,}/g, "\n") // Reduce successive line breaks
           .replace(/[\s]{2,}/g, " ")  // Reduce successive white space 
@@ -300,7 +303,9 @@
       
       // Error checking
       for (var i in entries) {
-        var out = "<li>";
+        var out = "",
+          isValidRow = true;
+          
         entries[i] = entries[i].split(/[\s]+/);
         
         for (var n in entries[i]) {
@@ -308,22 +313,29 @@
             out += entries[i][n] + " ";
           } else {
             isValid = false;
-            out += '<span class="err">' + entries[i][n] + "</span> ";
+            isValidRow = false;
+            out += '<span class="feedback-error">' + entries[i][n] + "</span> ";
           }
         }
         
         try {
           resistances[i] = new Resistance(entries[i]);
-          if (typeof resistances[i].ohms === 'number') {
+          if (isValidRow) {
             out += "(" + resistances[i].label + ")";
           }
+          
         } catch (e) {
           // do nothing; we have other error handling
           continue;
         }
         
-        out += "</li>";
-        $err.append(out);
+        if (isValidRow) {
+          out = '<i class="icon-ok"></i> ' + out;
+        } else {
+          out = '<i class="icon-remove"></i> ' + out;
+        }
+        
+        $err.append("<li>" + out + "</li>");
         
       }
       
@@ -331,17 +343,15 @@
       
       // Rendering
       if (isValid) {
-        $errStatus.html("OK");
         var last = null;
         
         for (var i in resistances) {
+          // Dedupe and add to canvas
           if (last == null || !resistances[i].equals(last)) {
             Canvas.addLabel(Label.create(resistances[i]));
             last = resistances[i];
           }
         }
-      } else {
-        $errStatus.html("Error!");
       }
       
     });
