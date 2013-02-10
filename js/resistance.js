@@ -1,6 +1,9 @@
 
 (function () {
   
+  /**
+   * Colors and values
+   */
   var Colors = {
     isColor: function (color) {
       return Colors.names.indexOf(color) != -1;
@@ -87,6 +90,9 @@
     ]
   };
   
+  /**
+   * Labeling properties and functions
+   */
   var Label = {
     size: 300,
     margin: 20,
@@ -96,29 +102,37 @@
     ohms: "\u03A9", // Ω, preferred over \u2126,
     bandHeight: 0,
     
+    /**
+     * Create a label as a Fabric group from a given resistance
+     */
     create: function (resistance) {
       var group = new fabric.Group(),
-        bandWidth = (Label.size - Label.margin * 2) / resistance.bands.length;
+        margin = Math.round(Label.size * 0.06),
+        spacing = Math.round(margin * 0.5),
+        bandHeight = Label.size * .8 - margin * 2,
+        bandWidth = (Label.size - margin * 2) / resistance.bands.length;
       
       
-      if (Label.showBorders) {
-        group.add(new fabric.Rect({
-          "width": Label.size, 
-          "height": Label.size, 
-          "top": 0, 
-          "left": 0, 
-          "strokeWidth": 0.5, 
-          "stroke": "#999999", 
-          "fill": "rgba(255,255,255,0)"
-        }));
-      }
+      
+      // Border/background
+      group.add(new fabric.Rect({
+        "width": Label.size, 
+        "height": Label.size, 
+        "top": 0, 
+        "left": 0, 
+        "strokeWidth": Label.showBorders ? 0.5 : 0, 
+        "stroke": Label.showBorders ? "#999999" : "#ffffff", 
+        "fill": "#fff"
+      }));
     
+      // Colored bands
       for (var i = 0; i < resistance.bands.length; i++) {
         group.add(new fabric.Rect({
-          "width": bandWidth - Label.spacing,
-          "height": Label.bandHeight,
-          "top": Label.bandHeight / 2 - (Label.size - Label.bandHeight - Label.margin),
-          "left": (Label.size / 2 * -1) + (bandWidth * i) + Label.margin + bandWidth / 2,
+          "width": bandWidth - spacing,
+          "height": bandHeight,
+          "top": (Label.size / 2 * -1) + margin + (Label.size - bandHeight - margin * 2) + (bandHeight / 2),
+          //bandHeight / 2 - (Label.size - bandHeight - margin),
+          "left": (Label.size / 2 * -1) + (bandWidth * i) + margin + bandWidth / 2,
           "rx": 6,
           "ry": 6,
           "fill": Colors.getByName(resistance.bands[i]),
@@ -128,33 +142,39 @@
         }));
       }
       
+      // Label
       var label = new fabric.Text(resistance.label, {
         "fontFamily": "FreeBeer",
         "fontWeight": 700,
-        "fontSize": 32,
+        "fontSize": parseInt(Label.size / 10),
         "fill": "#333333",
         "selectable": false,
         "useNative": false
       });
       
       Canvas.ghost.add(label).renderAll();
-      label.top = ((Label.size / 2) - Label.margin - (label.height / 2)) * -1;
+      label.top = ((Label.size / 2) - margin - (label.height / 2)) * -1;
       label.left = 0;
       group.add(label);
       
       return group;
     }
   };
-  Label.bandHeight = Label.size * .8 - Label.margin * 2;
   
+  /**
+   * Canvas properties
+   */
   var Canvas = {
-    fabric: null,
-    ghost: null,
-    jq: null,
-    row: 0,
-    col: 0,
-    maxColumns: 7,
+    fabric: null, // Fabric instance
+    ghost: null,  // "Ghost" canvas for calculating text width and height
+    jq: null,     // jQuery handle for canvas
+    row: 0,       // Current row
+    col: 0,       // Current column
+    maxColumns: 7,// Maximum number of columns before wrapping
     
+    /**
+     * Add a label to the canvas
+     */
     addLabel: function (label) {
       // Increase width while adding to first row
       if (Canvas.row == 0) {
@@ -186,7 +206,7 @@
     }
   };
   
-  
+  // Multiples for friendly labeling
   var multiples = [
     {"base": 1000000, "label": "M"},
     {"base": 1000, "label": "K"},
@@ -194,6 +214,10 @@
     //{"base": 0.001, "label": "m"}
   ];
   
+  
+  /**
+   * Representation of a resistance with bands, Ohms, and human-friendly labeling
+   */
   function Resistance() {
     // Argument validation
     if (arguments.length < 3) {
@@ -215,6 +239,7 @@
     }
     this.ohms *= Colors.getMultiplierByName(arguments[arguments.length - 1]);
     
+    // Arrive at a human friendly label (5.6KOhms vs 5600Ohms)
     for (var i in multiples) {
       if (this.ohms / multiples[i].base >= 1) {
         if (Label.useDecimals) {
@@ -235,6 +260,9 @@
       }
     }
     
+    /**
+     * Comparison function to test for object equality
+     */
     this.equals = function (resistance) {
       if (typeof resistance !== "object" || typeof resistance.bands !== "object") {
         return false;
@@ -251,6 +279,9 @@
     }
   }
   
+  /**
+   * Comparison function for sorting resistors
+   */
   Resistance.compare = function (a, b) {
     return a.ohms - b.ohms;
   }
@@ -265,8 +296,11 @@
     var $ref = $("#ColorRef ul"),
       $err = $("#ErrorChecking"),
       $showBorders = $("#ShowBorder"),
-      $decimals = $("#UseDecimal");
+      $decimals = $("#UseDecimal"),
+      $labelSize = $("#LabelSize"),
+      $labelSizeIn = $("#LabelSizeInches");
       
+    // Add color names to modal
     for (var i in Colors.names) {
       $ref.append(
         '<li style="background-color: ' + Colors.getByName(Colors.names[i])
@@ -275,12 +309,33 @@
       );
     }
     
+    // Update label size
+    $labelSize.val(Label.size);
+    $labelSizeIn.val((Label.size / 300).toFixed(1));
+    
+    /* * * * Event handling * * * */
+    
+    // Use decimals?
     $decimals.click(function () {
       Label.useDecimals = $decimals.is(":checked");
     });
     
+    // Show borders?
     $showBorders.click(function () {
       Label.showBorders = $showBorders.is(":checked");
+    });
+    
+    // Change label size
+    $labelSize.change(function () {
+      Label.size = parseInt($labelSize.val());
+      $labelSizeIn.val((Label.size / 300).toFixed(1));
+      return false;
+    });
+    
+    $labelSizeIn.change(function () {
+      Label.size = parseInt($labelSizeIn.val() * 300);
+      $labelSize.val(Label.size);
+      return false;
     });
     
     $("#Generate").click(function () {

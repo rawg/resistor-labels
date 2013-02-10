@@ -4,6 +4,9 @@
     <title>Resistor Reader and Labeler</title>
     <link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
 		<style type="text/css">
+			body {
+				background-color: #fefefe;
+			}
 			#ColorRef ul {
 				width: 100%;
 				text-align: center;
@@ -28,11 +31,26 @@
 				margin-bottom: 1em;
 			}
 			#Title {
-				background-color: #000000;
-				color: #ffffff;
+				/* Thanks, subtlepatterns.com! */
 				background-image: url("img/wild_oliva.png");
-				background-repeat: repeat-x;
+				background-repeat: all;
+				background-color: #333333;
+				color: #ffffff;
+				border-bottom: 4px #202020 solid;
 				margin-bottom: 1em;
+				font-variant: small-caps;
+			}
+			#Title p {
+				color: #999999;
+			}
+			p {
+				padding: 1ex;
+			}
+			#Labels {
+				margin: 1em;
+			}
+			.label-size {
+				width: 5ex;
 			}
 			.feedback-error {
 				color: red;
@@ -40,6 +58,9 @@
 			li .feedback-error {
 				font-weight: bold;
 				text-decoration: line-through;
+			}
+			.scroll {
+				overflow: auto;
 			}
 		</style>
   </head>
@@ -51,20 +72,41 @@
 			</div>
 		</div>
 		
-		
+		<a href="https://github.com/rawg/resistor-labels"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_orange_ff7600.png" alt="Fork me on GitHub"></a>
+		<div class="row">
+			<div class="span12">
+				<p>
+					Do you hate rummaging through a big pile of resistors to find the value you're looking for?
+					Try sorting and labeling them instead!  The sorting is on you, but this tool will help with the labeling.
+					For each type of resistor you've got, type out the colors of the bands.  Keep each resistor on its own line, 
+					and skip the tolerance band (sorry - feel free to <a href="https://github.com/rawg/resistor-labels">fork</a> 
+					this project and add it yourself!).
+					Once you're done, you can generate labels and download them as a PNG.  For more information, read what Wikipedia
+					has to say about 
+					<a href="http://en.wikipedia.org/wiki/Ohm">Ohms</a> and 
+					<a href="http://en.wikipedia.org/wiki/Electronic_color_code#Resistor_color-coding">resistor color codes</a>.
+				</p>
+			</div>
+		</div>
 		<div class="container-fluid">
 			<div class="row-fluid">
-				<div class="span4">
-					<textarea id="Input" rows="12">
-red black green
+				<div class="span3">
+					<textarea id="Input" rows="12">red black green
 green blue yellow
-red orange violet black
-					</textarea>
+red orange violet black</textarea>
 					
 					<a href="#ColorListModal" role="button" data-toggle="modal">Uhh, what colors?</a>
 					
 					<label><input type="checkbox" id="UseDecimal" checked="checked" /> Decimal points</label>
 					<label><input type="checkbox" id="ShowBorder" checked="checked" /> Borders</label>
+					
+					<label>Label Size:</label>
+					<div class="input-append offset1">
+					  <input type="text" class="label-size" id="LabelSize"><span class="add-on">px</span> 
+					</div>
+					<div class="input-append offset1">
+					  <input type="text" class="label-size" id="LabelSizeInches"><span class="add-on">in</span> 
+					</div>
 					
 					<div id="ButtonRow">
 						<button id="Generate" class="btn"><i class="icon-refresh"></i> Generate</button>
@@ -74,7 +116,7 @@ red orange violet black
 					<ul id="ErrorChecking"></ul>
 				</div>
 
-				<div class="span8">
+				<div class="span8 scroll well">
 					<canvas id="Labels" width="400" height="300"></canvas>
 				</div>
 
