@@ -97,6 +97,7 @@
     size: 300,
     margin: 20,
     spacing: 10,
+	dpi: 72,
     useDecimals: true,
     showBorders: true,
     ohms: "\u03A9", // Ω, preferred over \u2126,
@@ -170,8 +171,10 @@
     jq: null,     // jQuery handle for canvas
     row: 0,       // Current row
     col: 0,       // Current column
-    maxColumns: 7,// Maximum number of columns before wrapping
-    
+    maxColumns: function () {  // Maximum number of columns before wrapping
+		return Math.floor(8 / (Label.size / Label.dpi)); 
+	},
+	    
     /**
      * Add a label to the canvas
      */
@@ -196,7 +199,7 @@
       Canvas.fabric.add(label);
       Canvas.fabric.renderAll();
       
-      if (Canvas.col == Canvas.maxColumns - 1) {
+      if (Canvas.col == Canvas.maxColumns() - 1) {
         Canvas.col = 0;
         ++Canvas.row;
       } else {
@@ -291,13 +294,14 @@
     Canvas.fabric = new fabric.Canvas("Labels", {"selection": false});
     Canvas.ghost = new fabric.Canvas("Ghost");
     Canvas.jq = $("#Labels");
-    
+     
     
     var $ref = $("#ColorRef ul"),
       $err = $("#ErrorChecking"),
       $showBorders = $("#ShowBorder"),
       $decimals = $("#UseDecimal"),
       $labelSize = $("#LabelSize"),
+	  $labelDpi = $("#LabelDpi"),
       $labelSizeIn = $("#LabelSizeInches");
       
     // Add color names to modal
@@ -308,10 +312,21 @@
         + i + ": " + Colors.names[i] + "</li>"
       );
     }
-    
+   
+    function setLabelIn(inches) {
+		Label.size = parseInt(inches * Label.dpi);	
+		$labelSize.val(Label.size);
+	}
+
+	function setLabelPx(pixels) {
+		Label.size = pixels;
+		$labelSizeIn.val((Label.size / Label.dpi).toFixed(1));
+	}
+
     // Update label size
+	$labelDpi.val(Label.dpi);
     $labelSize.val(Label.size);
-    $labelSizeIn.val((Label.size / 300).toFixed(1));
+    $labelSizeIn.val((Label.size / Label.dpi).toFixed(1));
     
     /* * * * Event handling * * * */
     
@@ -327,17 +342,20 @@
     
     // Change label size
     $labelSize.change(function () {
-      Label.size = parseInt($labelSize.val());
-      $labelSizeIn.val((Label.size / 300).toFixed(1));
+      setLabelPx(parseInt($labelSize.val()));
       return false;
     });
     
     $labelSizeIn.change(function () {
-      Label.size = parseInt($labelSizeIn.val() * 300);
-      $labelSize.val(Label.size);
+      setLabelIn(parseFloat($labelSizeIn.val()));
       return false;
     });
-    
+
+	$labelDpi.change(function () {
+		Label.dpi = parseInt($labelDpi.val());
+    	setLabelIn($labelSizeIn.val());
+	});
+
     $("#Generate").click(function () {
       $err.html("");
       $("#Save").attr("disabled", false);
